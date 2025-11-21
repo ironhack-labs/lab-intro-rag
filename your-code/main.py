@@ -54,8 +54,8 @@
 
 # %% id="6heKZkQUxYZr"
 import os
-from langchain.document_loaders import PyPDFLoader
-from langchain.text_splitter import CharacterTextSplitter, RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTextSplitter
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -66,7 +66,7 @@ warnings.filterwarnings('ignore')
 # %% id="cuREtJRixYZt"
 # File path for the document
 
-file_path = "LAB/ai-for-everyone.pdf"
+file_path = "ai-for-everyone.pdf"
 
 # %% [markdown] id="pz_8SOLxxYZt"
 # <h3 style="color: #FF8C00;">Documents into pages</h3>
@@ -208,15 +208,15 @@ len(chunks)
 #
 
 # %% id="L0xDxElwxYZw"
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from dotenv import load_dotenv
 
 # %% id="_WRIo3_0xYZx" outputId="78bfbbf3-9d25-4e31-bdbc-3e932e6bbfec"
 load_dotenv()
 
 # %% id="MNZfTng5xYZz" outputId="db1a7c85-ef9f-447e-92cd-9d097e959847"
-api_key = os.getenv("OPENAI_API_KEY")
-embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+# Using HuggingFace embeddings instead of OpenAI
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 # %% [markdown] id="EsSA7RKvxYZz"
 # <h2 style="color: #FF8C00;">ChromaDB</h2>
@@ -234,7 +234,7 @@ embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 # - **Integration:** Supports integration with popular frameworks and libraries for embedding generation.
 
 # %% id="brKe6wUgxYZ0"
-from langchain.vectorstores import Chroma
+from langchain_chroma import Chroma
 
 # %% id="VkjHR-RkxYZ0" outputId="bc11bda9-f283-457a-f584-5a06b95c4dd9"
 db = Chroma.from_documents(chunks, embeddings, persist_directory="./chroma_db_LAB")
@@ -248,7 +248,7 @@ print("ChromaDB created with document embeddings.")
 # ### Exercice1: Write a user question that someone might ask about your book’s topic or content.
 
 # %% id="XiLv-TfrxYZ1"
-user_question = "" # User question
+user_question = "What are the main benefits of AI for businesses?" # User question
 retrieved_docs = db.similarity_search(user_question, k=10) # k is the number of documents to retrieve
 
 # %% id="qgWsh50JxYZ1" outputId="c8640c5d-5955-471f-fdd2-37096f5f68c7"
@@ -282,39 +282,70 @@ print("Context formatted for GPT model.")
 
 # %% id="tqxVh9s3xYZ3" outputId="97cca95d-4ab3-44d8-a76c-5713aad387d8"
 prompt = f"""
+You are an AI assistant that helps answer questions about AI based on the provided context.
+Use the following context to answer the user's question.
+If you don't know the answer, say "I don't know based on the provided context."
 
+Context: {formatted_context}
 
+Question: {user_question}
+
+Answer:
 """
 
 
 # %% id="0mjkQJ_ZxYZ3"
-import openai
+# OpenAI compatible API like Ollama (requires Ollama to be installed)
+from langchain_openai import ChatOpenAI
+import os
 
 # %% [markdown]
 # ### Exercice3: Tune parameters like temperature, and penalties to control how creative, focused, or varied the model's responses are.
 
 # %% id="ylypRWRlxYZ4"
-# Set up GPT client and parameters
-client = openai.OpenAI()
+# Use Ollama with qwen3-vl:8b model that's available locally
+from langchain_openai import ChatOpenAI
+
+# Using Ollama - a free local option
 model_params = {
-    'model': 'gpt-4o',
-    'temperature': ,  # Increase creativity
-    'max_tokens': ,  # Allow for longer responses
-    'top_p': ,        # Use nucleus sampling
-    'frequency_penalty': ,  # Reduce repetition
-    'presence_penalty':    # Encourage new topics
+    "temperature": 0.7,  # Increase creativity
+    "max_tokens": 500,   # Allow for longer responses
+    "top_p": 0.9,        # Use nucleus sampling
+    "frequency_penalty": 0.5,  # Reduce repetition
+    "presence_penalty": 0.5    # Encourage new topics
 }
+
+llm = ChatOpenAI(
+    base_url="http://localhost:11434/v1",  # Ollama default endpoint
+    api_key="ollama",  # Ollama accepts any key
+    model="qwen3-vl:8b",
+    model_kwargs=model_params
+)
 
 # %% [markdown] id="C8e942xDxYZ4"
 # <h1 style="color: #FF6347;">Response</h1>
 #
 
 # %% id="4eXZO4pIxYZ4"
-messages = [{'role': 'user', 'content': prompt}]
-completion = client.chat.completions.create(messages=messages, **model_params, timeout=120)
+# Format the retrieved documents as context for the LLM
+context = "\n".join([doc.page_content for doc in retrieved_docs[:3]])  # Use top 3 documents
+
+# Create a prompt for the Ollama model with the context
+full_prompt = f"""
+Based on the following context, please answer the question.
+
+Context: {context}
+
+Question: {user_question}
+
+Answer:
+"""
+
+# Run the prompt through the Ollama model
+response = llm.invoke(full_prompt)
+answer = response.content
 
 # %% id="wLPAcchBxYZ5" outputId="976c7800-16ed-41fe-c4cf-58f60d3230d2"
-answer = completion.choices[0].message.content
 print(answer)
 
 # %% [markdown] id="VXVNXPwLxYaT"
@@ -357,7 +388,7 @@ def highlight_keywords(text, keywords):
 # ### Exercice4: add your keywords
 
 # %% id="i7SkWPpnxYaW" outputId="28e82563-edba-4b41-acad-ec27e5ba134f"
-query_keywords = [] # add your keywords
+query_keywords = ["AI", "artificial intelligence", "machine learning", "business", "benefits", "technology"] # add your keywords
 for i, doc in enumerate(retrieved_docs[:1]):
     snippet = doc.page_content[:200]
     highlighted = highlight_keywords(snippet, query_keywords)
