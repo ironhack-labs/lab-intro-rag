@@ -1,0 +1,23 @@
+# Environtment
+.env
+.env.*
+
+# Vector DBs (Chroma)
+chroma_db_*/
+chroma_db_LAB/
+chroma_db_python/
+
+# PDF and local data
+*.pdf
+LAB/
+
+# Python
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
