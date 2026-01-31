@@ -1,0 +1,5 @@
+# Environment variables
+.env
+
+# Vector databases / embeddings
+chroma_db_LAB/
