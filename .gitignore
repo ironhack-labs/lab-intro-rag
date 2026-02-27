@@ -1,0 +1,46 @@
+# virtual environment
+.venv/
+venv/
+env/
+
+# Credentials and configs
+.env
+.env.local
+*.pem
+*.key
+
+# Chroma_db
+chroma_db_LAB/
+
+# Python cache and builds
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter/IPython
+.ipynb_checkpoints/
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# Logs and dumps
+*.log
+logs/
+.mongo/
+mongo/
