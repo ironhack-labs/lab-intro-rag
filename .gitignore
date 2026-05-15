@@ -1,0 +1,5 @@
+git rm --cached ai-for-everyone.pdf
+git rm --cached PhD-thesis.pdf
+
+git rm -r --cached your-code\chroma_db_BONUS
+git rm -r --cached your-code\chroma_db_LAB
